@@ -1,5 +1,7 @@
 import React from 'react';
 import Link from "next/link";
+import {MovingBorderBtn} from "@/components/ui/moving-border";
+import Title from "@/app/(home)/components/Title";
 
 const HeroSection = () => {
     return (
@@ -15,16 +17,11 @@ const HeroSection = () => {
                         "I'm currently looking for a new opportunity to work with a team that values creativity and innovation."
                     }
                 </p>
-                <Link href={""} className=" inline-block group">
-                    <div>
-                       <h1 className=" text-3xl font-bold group-hover:text-green-500  transition-all">Contact Me</h1>
-                        <div className="w-400 h-2 bg-green-500 rounded-full "></div>
-                        <div className="w-400 h-2 bg-indigo-500 rounded-full translate-x-2"></div>
-
-                    </div>
+                <Link href={""} className="inline-block group">
+                   <Title text="Contact Me 📩" className=""/>
                 </Link>
             </div>
-            <div>
+            <div className="relative">
                 <div className="w-72 h-72 space-y-3 -rotate-[30deg] relative ">
                     <div className="flex gap-3 translate-x-8">
                         <div className="w-32 h-32 rounded-2xl bg-green-500"></div>
@@ -38,9 +35,13 @@ const HeroSection = () => {
                     <div className="grow absolute top-[40%] right-1/2 -z-10">
 
                     </div>
-
-
                 </div>
+                <div className="absolute bottom-5 sm:bottom-14 left-0 sm:-left-10 ">
+                    <MovingBorderBtn borderRadius="0.5rem" className="p-3 font-semibold">
+                        <p>  📢 Available for Drink   </p>
+                    </MovingBorderBtn>
+                </div>
+
             </div>
 
 
