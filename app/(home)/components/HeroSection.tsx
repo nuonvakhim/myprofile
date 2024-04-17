@@ -18,7 +18,7 @@ const HeroSection = () => {
                     }
                 </p>
                 <Link href={""} className="inline-block group">
-                   <Title text="Contact Me 📩" className=""/>
+                    <Title text="Contact Me 📩" className=""/>
                 </Link>
             </div>
             <div className="relative">
@@ -38,7 +38,7 @@ const HeroSection = () => {
                 </div>
                 <div className="absolute bottom-5 sm:bottom-14 left-0 sm:-left-10 ">
                     <MovingBorderBtn borderRadius="0.5rem" className="p-3 font-semibold">
-                        <p>  📢 Available for Drink   </p>
+                        <p> 📢 Available for Drink </p>
                     </MovingBorderBtn>
                 </div>
 

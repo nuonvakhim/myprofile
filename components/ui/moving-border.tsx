@@ -1,25 +1,18 @@
 "use client";
-import React from "react";
-import {
-    motion,
-    useAnimationFrame,
-    useMotionTemplate,
-    useMotionValue,
-    useTransform,
-} from "framer-motion";
-import { useRef } from "react";
-import { cn } from "@/lib/utils";
+import React, {useRef} from "react";
+import {motion, useAnimationFrame, useMotionTemplate, useMotionValue, useTransform,} from "framer-motion";
+import {cn} from "@/lib/utils";
 
 export function MovingBorderBtn({
-                           borderRadius = "1.75rem",
-                           children,
-                           as: Component = "button",
-                           containerClassName,
-                           borderClassName,
-                           duration,
-                           className,
-                           ...otherProps
-                       }: {
+                                    borderRadius = "1.75rem",
+                                    children,
+                                    as: Component = "button",
+                                    containerClassName,
+                                    borderClassName,
+                                    duration,
+                                    className,
+                                    ...otherProps
+                                }: {
     borderRadius?: string;
     children: React.ReactNode;
     as?: any;
@@ -42,7 +35,7 @@ export function MovingBorderBtn({
         >
             <div
                 className="absolute inset-0"
-                style={{ borderRadius: `calc(${borderRadius} * 0.96)` }}
+                style={{borderRadius: `calc(${borderRadius} * 0.96)`}}
             >
                 <MovingBorder duration={duration} rx="30%" ry="30%">
                     <div

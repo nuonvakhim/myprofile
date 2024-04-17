@@ -2,7 +2,17 @@
 import React from 'react';
 import Title from "@/app/(home)/components/Title";
 import {HoverEffect} from "@/components/ui/card-hoover-effect";
-import {SiGithub,SiReact,SiNextdotjs,SiDocker, SiSpringboot  , SiBlockchaindotcom , SiTailwindcss ,SiTypescript  , SiMysql } from "react-icons/si";
+import {
+    SiBlockchaindotcom,
+    SiDocker,
+    SiGithub,
+    SiMysql,
+    SiNextdotjs,
+    SiReact,
+    SiSpringboot,
+    SiTailwindcss,
+    SiTypescript
+} from "react-icons/si";
 
 const Skills = () => {
     const skills = [
@@ -26,7 +36,7 @@ const Skills = () => {
         {
             text: "Spring Boot",
             Icon: SiSpringboot
-        },{
+        }, {
             text: "Docker",
             Icon: SiDocker
         },
