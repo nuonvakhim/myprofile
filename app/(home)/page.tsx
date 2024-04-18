@@ -3,11 +3,12 @@ import Navbar from './components/Navbar'
 import HeroSection from "@/app/(home)/components/HeroSection";
 import Skills from "@/app/(home)/components/Skills";
 import Project from "@/app/(home)/components/Project";
+import Footer from "@/app/(home)/components/Footer";
 
 export default function page() {
 
     return (
-        <div className="min-h-[4000vh]  bg-black  overflow-hidden">
+        <div className="min-h-screen  bg-black  overflow-hidden">
             <div>
                 <div className="dark:bg-black bg-white  dark:bg-grid-white/[0.09] bg-grid-black/[0.2] relative ">
 
@@ -27,6 +28,7 @@ export default function page() {
             <div className="max-w-7xl mx-auto p-5 mt-20 ">
                 <Skills/>
                 <Project/>
+                <Footer/>
             </div>
 
         </div>

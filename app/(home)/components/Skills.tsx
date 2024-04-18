@@ -6,8 +6,8 @@ import {
     SiBlockchaindotcom,
     SiDocker,
     SiGithub,
-    SiMysql,
     SiNextdotjs,
+    SiPostgresql,
     SiReact,
     SiSpringboot,
     SiTailwindcss,
@@ -30,8 +30,8 @@ const Skills = () => {
             Icon: SiTypescript
         },
         {
-            text: "My SQL",
-            Icon: SiMysql
+            text: "Postgresql",
+            Icon: SiPostgresql
         },
         {
             text: "Spring Boot",

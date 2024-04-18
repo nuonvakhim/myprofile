@@ -10,29 +10,29 @@ const Project = () => {
         {
             title: "Portify - A Portfolio Website",
             tech: [SiReact, SiDocker, SiTailwindcss, SiSpringboot],
-            link: "http://portify.vercel.app",
+            link: "http://localhost:3000",
             cover: "/img.png",
             background: "bg-indigo-500",
         },
         {
             title: "Portify - A Portfolio Website",
             tech: [SiReact, SiDocker, SiTailwindcss, SiSpringboot],
-            link: "http://portify.vercel.app",
-            cover: "/portify.png",
+            link: "http://localhost:3000",
+            cover: "/img.png",
             background: "bg-green-500",
         },
         {
             title: "Portify - A Portfolio Website",
             tech: [SiReact, SiDocker, SiTailwindcss, SiSpringboot],
-            link: "http://portify.vercel.app",
-            cover: "/portify.png",
-            background: "bg-indigo-500",
+            link: "http://localhost:3000",
+            cover: "/img.png",
+            background: "bg-green-500",
         },
         {
             title: "Portify - A Portfolio Website",
             tech: [SiReact, SiDocker, SiTailwindcss, SiSpringboot],
-            link: "http://portify.vercel.app",
-            cover: "/portify.png",
+            link: "http://localhost:3000",
+            cover: "/img.png",
             background: "bg-indigo-500",
         },
     ]
@@ -40,7 +40,7 @@ const Project = () => {
         <div className="py-10 p-5 sm:p-0 ">
             <div className="flex flex-col items-center justify-center">
 
-                <Title text="Project" className=" rotate-6"/>
+                <Title text="Project 💻" className=" rotate-6"/>
             </div>
 
 
@@ -49,7 +49,8 @@ const Project = () => {
                     return (
                         <Link href={project.link} key={index}>
                             <div className={cn("p-5  rounded-md ", project.background)}>
-                                <DirectionAwareHover imageUrl={project.cover} className="w-full space-y-5 cursor-pointer">
+                                <DirectionAwareHover imageUrl={project.cover}
+                                                     className="w-full space-y-5 cursor-pointer">
                                     <div className="space-y-5">
                                         <h1 className="text-2xl font-bold">{project.title}</h1>
                                         <div className="flex items-center gap-5 ">
