@@ -1,5 +1,5 @@
 import React from 'react';
-import {SiGithub, SiInstagram, SiLinkedin, SiX} from "react-icons/si";
+import {SiFacebook, SiGithub, SiInstagram, SiLinkedin} from "react-icons/si";
 import Link from "next/link";
 import {cn} from "@/lib/utils";
 
@@ -13,17 +13,17 @@ export default function Navbar({className}: { className?: string }) {
         },
         {
             Label: 'LinkedIn',
-            Link: 'https://www.linkedin.com/in/nuonvakhim/',
+            Link: 'https://www.linkedin.com/in/vakhim-nuon-429b38271/',
             Icon: SiLinkedin,
         },
         {
-            Label: 'Twitter',
-            Link: 'https://twitter.com/nuonvakhim',
-            Icon: SiX,
+            Label: 'Facebook',
+            Link: 'https://www.facebook.com/Vakhim.Nuon?mibextid=ZbWKwL',
+            Icon: SiFacebook,
         },
         {
             Label: 'Instagram',
-            Link: 'https://www.instagram.com/nuonvakhim/',
+            Link: 'https://instagram.com/nakhim_11',
             Icon: SiInstagram,
         }
     ]

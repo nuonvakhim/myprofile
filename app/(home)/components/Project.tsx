@@ -1,5 +1,13 @@
 import React from 'react';
-import {SiDocker, SiReact, SiSpringboot, SiTailwindcss} from "react-icons/si";
+import {
+    SiBlockchaindotcom,
+    SiDocker,
+    SiNextdotjs,
+    SiReact,
+    SiSpringboot,
+    SiTailwindcss,
+    SiVercel, SiVite
+} from "react-icons/si";
 import Title from "@/app/(home)/components/Title";
 import Link from "next/link";
 import {cn} from "@/lib/utils";
@@ -11,36 +19,30 @@ const Project = () => {
             title: "Portify - A Portfolio Website",
             tech: [SiReact, SiDocker, SiTailwindcss, SiSpringboot],
             link: "http://localhost:3000",
-            cover: "/img.png",
+            cover: "/img.jpg",
             background: "bg-indigo-500",
         },
         {
-            title: "Portify - A Portfolio Website",
-            tech: [SiReact, SiDocker, SiTailwindcss, SiSpringboot],
+            title: "My Portfolio - A Portfolio Website",
+            tech: [SiNextdotjs, SiTailwindcss, SiVercel],
             link: "http://localhost:3000",
-            cover: "/img.png",
+            cover: "/img_5.png",
             background: "bg-green-500",
         },
         {
-            title: "Portify - A Portfolio Website",
-            tech: [SiReact, SiDocker, SiTailwindcss, SiSpringboot],
+            title: "E-Certify - A Certificate Generator based on Blockchain",
+            tech: [SiReact,SiVite, SiDocker, SiTailwindcss, SiSpringboot, SiBlockchaindotcom],
             link: "http://localhost:3000",
-            cover: "/img.png",
+            cover: "/im4.jpg",
             background: "bg-green-500",
         },
-        {
-            title: "Portify - A Portfolio Website",
-            tech: [SiReact, SiDocker, SiTailwindcss, SiSpringboot],
-            link: "http://localhost:3000",
-            cover: "/img.png",
-            background: "bg-indigo-500",
-        },
+
     ]
     return (
         <div className="py-10 p-5 sm:p-0 ">
             <div className="flex flex-col items-center justify-center">
 
-                <Title text="Project 💻" className=" rotate-6"/>
+                <Title text="Project 💻" className=" rotate-3"/>
             </div>
 
 

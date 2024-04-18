@@ -38,7 +38,7 @@ const HeroSection = () => {
                 </div>
                 <div className="absolute bottom-5 sm:bottom-14 left-0 sm:-left-10 ">
                     <MovingBorderBtn borderRadius="0.5rem" className="p-3 font-semibold">
-                        <p> 📢 Available for Drink </p>
+                        <p> 📢 Available for Work </p>
                     </MovingBorderBtn>
                 </div>
 
