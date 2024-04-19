@@ -10,7 +10,7 @@ export default function page() {
     return (
         <div className="min-h-screen  bg-black  overflow-hidden">
             <div>
-                <div className="dark:bg-black bg-white  dark:bg-grid-white/[0.09] bg-grid-black/[0.2] relative ">
+                <div className="dark:bg-black bg-black  dark:bg-grid-white/[0.09] bg-grid-white/[0.09] relative ">
 
                     <div className="max-w-7xl mx-auto mt-20 p-5 ">
 

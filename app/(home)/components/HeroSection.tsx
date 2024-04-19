@@ -17,7 +17,8 @@ const HeroSection = () => {
                         "I'm currently looking for a new opportunity to work with a team that values creativity and innovation."
                     }
                 </p>
-                <Link href={""} className="inline-block group">
+                <Link href={"https://t.me/vakhimnuon"} className="inline-block group" target="_blank">
+
                     <Title text="Contact Me 📩" className=""/>
                 </Link>
             </div>
