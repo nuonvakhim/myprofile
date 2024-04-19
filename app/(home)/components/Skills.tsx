@@ -55,13 +55,13 @@ const Skills = () => {
     ]
     return (
         <div
-            className="max-w-5xl mx-auto px-8 ">
+            className="max-w-5xl mx-auto px-8  ">
             <div className="flex flex-col justify-center items-center">
                 <Title text="Skills </>" className=" -rotate-6"/>
 
             </div>
             <br/>
-            <HoverEffect items={skills} className=""/>
+            <HoverEffect items={skills} className="text-white"/>
         </div>
     );
 };

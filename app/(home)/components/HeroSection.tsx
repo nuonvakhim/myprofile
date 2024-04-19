@@ -11,7 +11,7 @@ const HeroSection = () => {
 
                     <span className="underline underline-offset-8 decoration-green-500 "> {"I'm Vakhim"} </span></h1>
 
-                <p className="md:w-96 text-lg text-gray-300">
+                <p className="md:w-96 text-lg text-gray-300 ">
                     {
                         "Based in Cambodia, I'm a Fullstack developer with a passion for building beautiful and functional websites. " +
                         "I'm currently looking for a new opportunity to work with a team that values creativity and innovation."
