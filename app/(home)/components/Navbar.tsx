@@ -1,5 +1,5 @@
 import React from 'react';
-import {SiFacebook, SiGithub, SiInstagram, SiLinkedin} from "react-icons/si";
+import {SiFacebook, SiGithub, SiInstagram, SiLinkedin, SiTelegram} from "react-icons/si";
 import Link from "next/link";
 import {cn} from "@/lib/utils";
 
@@ -25,6 +25,11 @@ export default function Navbar({className}: { className?: string }) {
             Label: 'Instagram',
             Link: 'https://instagram.com/nakhim_11',
             Icon: SiInstagram,
+        },
+        {
+            Label: 'Telegram',
+            Link: 'https://t.me/vakhimnuon',
+            Icon: SiTelegram,
         }
     ]
 
