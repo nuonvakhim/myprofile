@@ -13,7 +13,7 @@ const HeroSection = () => {
 
                 <p className="md:w-96 text-lg text-gray-300 ">
                     {
-                        "Based in Cambodia, I'm a Fullstack developer with a passion for building beautiful and functional websites. " +
+                        "Based in Cambodia, I'm Web Fullstack developer with a passion for building beautiful and functional websites. " +
                         "I'm currently looking for a new opportunity to work with a team that values creativity and innovation."
                     }
                 </p>

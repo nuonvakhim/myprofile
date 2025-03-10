@@ -15,24 +15,24 @@ import {DirectionAwareHover} from "@/components/ui/direction-aware-hover";
 
 const Project = () => {
     const projects = [
+
         {
+            title: "My Portfolio - A Portfolio Website",
+            tech: [SiNextdotjs, SiTailwindcss, SiVercel],
+            link: "https://vakhim.vercel.app",
+            cover: "/img_5.png",
+            background: "bg-green-500",
+        },{
             title: "Portify - A Portfolio Website",
             tech: [SiReact, SiDocker, SiTailwindcss, SiSpringboot],
-            link: "http://localhost:3000",
+            link: "",
             cover: "/img.jpg",
             background: "bg-indigo-500",
         },
         {
-            title: "My Portfolio - A Portfolio Website",
-            tech: [SiNextdotjs, SiTailwindcss, SiVercel],
-            link: "http://localhost:3000",
-            cover: "/img_5.png",
-            background: "bg-green-500",
-        },
-        {
             title: "E-Certify - A Certificate Generator based on Blockchain",
             tech: [SiReact,SiVite, SiDocker, SiTailwindcss, SiSpringboot, SiBlockchaindotcom],
-            link: "http://localhost:3000",
+            link: "",
             cover: "/im4.jpg",
             background: "bg-green-500",
         },
