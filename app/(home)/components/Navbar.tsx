@@ -34,7 +34,7 @@ export default function Navbar({className}: { className?: string }) {
     ]
 
 
-    return <nav className={cn(" py-10 flex justify-between items-center text-white ", className)}>
+    return <nav className={cn("py-10 flex justify-between items-center text-gray-800 dark:text-white", className)}>
         <h1 className="text-2xl font-bold underline underline-offset-8 decoration-green-500 -rotate-2">
             Vakhim Nuon
         </h1>
