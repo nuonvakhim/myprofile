@@ -75,6 +75,9 @@ const TicTacToeGame: React.FC = () => {
     const [gameMode, setGameMode] = useState<'pvp' | 'pva' | null>(null);
     const [isAiThinking, setIsAiThinking] = useState<boolean>(false);
 
+    // --- Memoization cache for minimax ---
+    const minimaxCache = React.useRef(new Map<string, { score: number; index: number | null }>());
+
     // --- Game Logic Functions ---
 
     const startGame = (mode: 'pvp' | 'pva') => {
@@ -258,27 +261,149 @@ const TicTacToeGame: React.FC = () => {
     };
 
     /**
-     * Smart AI move selection
+     * Enhanced heuristic: counts open lines, blocks, and double threats
+     */
+    const enhancedHeuristic = (currentBoard: string[], player: 'X' | 'O'): number => {
+        // Use your existing evaluatePosition for base score
+        const base = evaluatePosition(currentBoard, player);
+        let score = base.length > 0 ? base[0].score : 0;
+        // Bonus for double threats (two or more winning moves next turn)
+        let doubleThreats = 0;
+        for (const move of currentBoard.map((cell, idx) => cell === '' ? idx : null).filter(idx => idx !== null) as number[]) {
+            const testBoard = [...currentBoard];
+            testBoard[move] = player;
+            if (checkWin(player, testBoard)) doubleThreats++;
+        }
+        score += doubleThreats >= 2 ? 500 : 0;
+        return score;
+    };
+
+    /**
+     * Minimax algorithm with alpha-beta pruning, memoization, and move ordering
+     */
+    const minimax = (
+        currentBoard: string[],
+        depth: number,
+        isMaximizing: boolean,
+        alpha: number,
+        beta: number
+    ): { score: number; index: number | null } => {
+        // Memoization key
+        const key = currentBoard.join('') + (isMaximizing ? 'O' : 'X') + depth;
+        if (minimaxCache.current.has(key)) return minimaxCache.current.get(key)!;
+
+        // Terminal states
+        const xWin = checkWin('X', currentBoard);
+        const oWin = checkWin('O', currentBoard);
+        if (oWin) return { score: 10000 - depth, index: null };
+        if (xWin) return { score: -10000 + depth, index: null };
+        if (!currentBoard.includes('')) return { score: 0, index: null };
+        if (depth === 0) {
+            const evalScore = enhancedHeuristic(currentBoard, 'O');
+            return { score: evalScore, index: null };
+        }
+
+        // Move ordering: sort by best heuristic for current player
+        const availableCells = currentBoard
+            .map((cell, idx) => (cell === '' ? idx : null))
+            .filter(idx => idx !== null) as number[];
+        const orderedMoves = availableCells
+            .map(idx => {
+                const testBoard = [...currentBoard];
+                testBoard[idx] = isMaximizing ? 'O' : 'X';
+                return { idx, score: enhancedHeuristic(testBoard, isMaximizing ? 'O' : 'X') };
+            })
+            .sort((a, b) => isMaximizing ? b.score - a.score : a.score - b.score)
+            .map(m => m.idx);
+
+        let bestIndex: number | null = null;
+
+        if (isMaximizing) {
+            let maxEval = -Infinity;
+            for (const idx of orderedMoves) {
+                const newBoard = [...currentBoard];
+                newBoard[idx] = 'O';
+                // Early win cutoff
+                if (checkWin('O', newBoard)) {
+                    minimaxCache.current.set(key, { score: 10000 - depth, index: idx });
+                    return { score: 10000 - depth, index: idx };
+                }
+                const evalResult = minimax(newBoard, depth - 1, false, alpha, beta).score;
+                if (evalResult > maxEval) {
+                    maxEval = evalResult;
+                    bestIndex = idx;
+                }
+                alpha = Math.max(alpha, evalResult);
+                if (beta <= alpha) break;
+            }
+            const result = { score: maxEval, index: bestIndex };
+            minimaxCache.current.set(key, result);
+            return result;
+        } else {
+            let minEval = Infinity;
+            for (const idx of orderedMoves) {
+                const newBoard = [...currentBoard];
+                newBoard[idx] = 'X';
+                // Early block cutoff
+                if (checkWin('X', newBoard)) {
+                    minimaxCache.current.set(key, { score: -10000 + depth, index: idx });
+                    return { score: -10000 + depth, index: idx };
+                }
+                const evalResult = minimax(newBoard, depth - 1, true, alpha, beta).score;
+                if (evalResult < minEval) {
+                    minEval = evalResult;
+                    bestIndex = idx;
+                }
+                beta = Math.min(beta, evalResult);
+                if (beta <= alpha) break;
+            }
+            const result = { score: minEval, index: bestIndex };
+            minimaxCache.current.set(key, result);
+            return result;
+        }
+    };
+
+    /**
+     * Checks if the opponent can win in their next move and returns the blocking index if so
+     */
+    const findImmediateBlock = (currentBoard: string[], opponent: 'X' | 'O'): number | null => {
+        for (const idx of currentBoard.map((cell, i) => cell === '' ? i : null).filter(i => i !== null) as number[]) {
+            const testBoard = [...currentBoard];
+            testBoard[idx] = opponent;
+            if (checkWin(opponent, testBoard)) {
+                return idx;
+            }
+        }
+        return null;
+    };
+
+    /**
+     * Smart AI move selection using enhanced minimax, with pre-move block scan
      */
     const makeAiMove = useCallback(() => {
         setTimeout(() => {
             setBoard(currentBoard => {
-                const evaluations = evaluatePosition(currentBoard, 'O');
-
-                if (evaluations.length > 0) {
-                    // Add some randomness to make AI less predictable, but still prefer better moves
-                    const bestScore = evaluations[0].score;
-                    const goodMoves = evaluations.filter(move => move.score >= bestScore * 0.8);
-                    const selectedMove = goodMoves[Math.floor(Math.random() * goodMoves.length)];
-
+                // Clear cache for each new move
+                minimaxCache.current.clear();
+                // 1. Block human win if possible
+                const blockIdx = findImmediateBlock(currentBoard, 'X');
+                if (blockIdx !== null && currentBoard[blockIdx] === '') {
                     const newBoard = [...currentBoard];
-                    newBoard[selectedMove.index] = 'O';
+                    newBoard[blockIdx] = 'O';
+                    return newBoard;
+                }
+                // 2. Otherwise, play best move
+                const depth = 4; // Try 4 for more strength, lower if slow
+                const { index } = minimax(currentBoard, depth, true, -Infinity, Infinity);
+                if (index !== null && currentBoard[index] === '') {
+                    const newBoard = [...currentBoard];
+                    newBoard[index] = 'O';
                     return newBoard;
                 }
                 return currentBoard;
             });
-        }, 800); // Slightly longer delay to show AI is "thinking"
-    }, [evaluatePosition]);
+        }, 400); // Faster AI response
+    }, [minimax]);
 
     // --- Effect Hook to check for win/draw and control game flow ---
     useEffect(() => {
