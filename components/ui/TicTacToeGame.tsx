@@ -69,11 +69,11 @@ const TicTacToeGame: React.FC = () => {
     // --- State Management using React Hooks ---
     const [board, setBoard] = useState<string[]>(Array(GRID_SIZE * GRID_SIZE).fill(''));
     const [currentPlayer, setCurrentPlayer] = useState<'X' | 'O'>('X');
-    const [isGameActive, setIsGameActive] = useState<boolean>(false); // Game starts inactive
+    const [isGameActive, setIsGameActive] = useState<boolean>(false);
     const [status, setStatus] = useState<string>("Select a game mode");
     const [winningLine, setWinningLine] = useState<number[] | null>(null);
-    const [gameMode, setGameMode] = useState<'pvp' | 'pva' | null>(null); // Player vs Player or Player vs AI
-    const [isAiThinking, setIsAiThinking] = useState<boolean>(false); // Lock to prevent AI double moves
+    const [gameMode, setGameMode] = useState<'pvp' | 'pva' | null>(null);
+    const [isAiThinking, setIsAiThinking] = useState<boolean>(false);
 
     // --- Game Logic Functions ---
 
@@ -86,7 +86,7 @@ const TicTacToeGame: React.FC = () => {
     const handleRestartGame = () => {
         setBoard(Array(GRID_SIZE * GRID_SIZE).fill(''));
         setCurrentPlayer('X');
-        setIsGameActive(false); // Go back to mode selection
+        setIsGameActive(false);
         setStatus("Select a game mode");
         setWinningLine(null);
         setGameMode(null);
@@ -94,7 +94,6 @@ const TicTacToeGame: React.FC = () => {
     };
 
     const handleCellClick = (index: number) => {
-        // Prevent click if cell is taken, game is over, or it's AI's turn
         if (board[index] !== '' || !isGameActive || (gameMode === 'pva' && currentPlayer === 'O')) {
             return;
         }
@@ -105,9 +104,7 @@ const TicTacToeGame: React.FC = () => {
     };
 
     /**
-     * Checks if a player has won. Wrapped in useCallback for optimization.
-     * @param player The player to check ('X' or 'O').
-     * @returns An array of winning cell indices, or null if no win.
+     * Checks if a player has won.
      */
     const checkWin = useCallback((player: 'X' | 'O', currentBoard: string[]): number[] | null => {
         for (let r = 0; r < GRID_SIZE; r++) {
@@ -135,27 +132,209 @@ const TicTacToeGame: React.FC = () => {
             }
         }
         return null;
-    }, []); // No dependency needed as board is passed in
+    }, []);
 
+    /**
+     * Advanced board evaluation function
+     */
+    const evaluateBoard = useCallback((board: string[], player: 'X' | 'O'): number => {
+        const opponent = player === 'X' ? 'O' : 'X';
+
+        // Check for immediate win/loss
+        if (checkWin(player, board)) return 10000;
+        if (checkWin(opponent, board)) return -10000;
+
+        let score = 0;
+
+        // Evaluate all possible lines
+        for (let r = 0; r < GRID_SIZE; r++) {
+            for (let c = 0; c < GRID_SIZE; c++) {
+                // Check all four directions
+                const directions = [[0, 1], [1, 0], [1, 1], [1, -1]];
+
+                for (const [dr, dc] of directions) {
+                    if (r + (WIN_LENGTH - 1) * dr >= 0 && r + (WIN_LENGTH - 1) * dr < GRID_SIZE &&
+                        c + (WIN_LENGTH - 1) * dc >= 0 && c + (WIN_LENGTH - 1) * dc < GRID_SIZE) {
+
+                        const line = Array.from({ length: WIN_LENGTH }, (_, i) =>
+                            (r + i * dr) * GRID_SIZE + (c + i * dc)
+                        );
+
+                        score += evaluateLine(line, board, player);
+                    }
+                }
+            }
+        }
+
+        return score;
+    }, [checkWin]);
+
+    /**
+     * Evaluates a single line for potential
+     */
+    const evaluateLine = (line: number[], board: string[], player: 'X' | 'O'): number => {
+        const opponent = player === 'X' ? 'O' : 'X';
+        let playerCount = 0;
+        let opponentCount = 0;
+        let emptyCount = 0;
+
+        for (const index of line) {
+            if (board[index] === player) playerCount++;
+            else if (board[index] === opponent) opponentCount++;
+            else emptyCount++;
+        }
+
+        // If opponent has pieces in this line, it's not useful for us
+        if (opponentCount > 0 && playerCount > 0) return 0;
+
+        // Score based on potential
+        if (playerCount === 4) return 10000;
+        if (playerCount === 3 && emptyCount === 1) return 500;
+        if (playerCount === 2 && emptyCount === 2) return 50;
+        if (playerCount === 1 && emptyCount === 3) return 5;
+
+        // Penalize opponent potential
+        if (opponentCount === 4) return -10000;
+        if (opponentCount === 3 && emptyCount === 1) return -400;
+        if (opponentCount === 2 && emptyCount === 2) return -40;
+        if (opponentCount === 1 && emptyCount === 3) return -4;
+
+        return 0;
+    };
+
+    /**
+     * Minimax algorithm with alpha-beta pruning for optimal AI moves
+     */
+    const minimax = useCallback((
+        board: string[],
+        depth: number,
+        isMaximizing: boolean,
+        alpha: number,
+        beta: number,
+        player: 'X' | 'O'
+    ): { score: number, move?: number } => {
+        const currentPlayer = isMaximizing ? player : (player === 'X' ? 'O' : 'X');
+        const boardScore = evaluateBoard(board, player);
+
+        // Terminal conditions
+        if (Math.abs(boardScore) >= 10000 || depth === 0 || !board.includes('')) {
+            return { score: boardScore - (isMaximizing ? depth : -depth) }; // Prefer quicker wins/slower losses
+        }
+
+        const availableMoves = board
+            .map((cell, index) => cell === '' ? index : null)
+            .filter(index => index !== null) as number[];
+
+        let bestMove = availableMoves[0];
+
+        if (isMaximizing) {
+            let maxScore = -Infinity;
+
+            for (const move of availableMoves) {
+                const newBoard = [...board];
+                newBoard[move] = currentPlayer;
+
+                const { score } = minimax(newBoard, depth - 1, false, alpha, beta, player);
+
+                if (score > maxScore) {
+                    maxScore = score;
+                    bestMove = move;
+                }
+
+                alpha = Math.max(alpha, score);
+                if (beta <= alpha) break; // Alpha-beta pruning
+            }
+
+            return { score: maxScore, move: bestMove };
+        } else {
+            let minScore = Infinity;
+
+            for (const move of availableMoves) {
+                const newBoard = [...board];
+                newBoard[move] = currentPlayer;
+
+                const { score } = minimax(newBoard, depth - 1, true, alpha, beta, player);
+
+                if (score < minScore) {
+                    minScore = score;
+                    bestMove = move;
+                }
+
+                beta = Math.min(beta, score);
+                if (beta <= alpha) break; // Alpha-beta pruning
+            }
+
+            return { score: minScore, move: bestMove };
+        }
+    }, [evaluateBoard]);
+
+    /**
+     * Gets the optimal move using iterative deepening
+     */
+    const getBestMove = useCallback((board: string[]): number => {
+        const availableMoves = board
+            .map((cell, index) => cell === '' ? index : null)
+            .filter(index => index !== null) as number[];
+
+        if (availableMoves.length === 0) return -1;
+
+        // Use iterative deepening to get the best move within time constraints
+        let bestMove = availableMoves[0];
+        let maxDepth = Math.min(8, availableMoves.length); // Adjust depth based on game state
+
+        // For early game, use opening book strategies
+        if (availableMoves.length >= GRID_SIZE * GRID_SIZE - 4) {
+            // Prefer center positions in early game
+            const centerPositions = [];
+            const mid = Math.floor(GRID_SIZE / 2);
+            for (let r = mid - 1; r <= mid + 1; r++) {
+                for (let c = mid - 1; c <= mid + 1; c++) {
+                    if (r >= 0 && r < GRID_SIZE && c >= 0 && c < GRID_SIZE) {
+                        const pos = r * GRID_SIZE + c;
+                        if (availableMoves.includes(pos)) {
+                            centerPositions.push(pos);
+                        }
+                    }
+                }
+            }
+            if (centerPositions.length > 0) {
+                return centerPositions[Math.floor(Math.random() * centerPositions.length)];
+            }
+        }
+
+        // Use minimax for strategic play
+        for (let depth = 1; depth <= maxDepth; depth++) {
+            const result = minimax(board, depth, true, -Infinity, Infinity, 'O');
+            if (result.move !== undefined) {
+                bestMove = result.move;
+            }
+
+            // If we found a winning move, no need to search deeper
+            if (result.score >= 10000) break;
+        }
+
+        return bestMove;
+    }, [minimax]);
+
+
+
+    /**
+     * Ultra-smart AI move selection using minimax
+     */
     const makeAiMove = useCallback(() => {
-        // AI move logic is now simpler: just update the board.
         setTimeout(() => {
             setBoard(currentBoard => {
-                const availableCells = currentBoard
-                    .map((cell, index) => (cell === '' ? index : null))
-                    .filter(index => index !== null);
+                const bestMove = getBestMove(currentBoard);
 
-                if (availableCells.length > 0) {
-                    const randomIndex = availableCells[Math.floor(Math.random() * availableCells.length)] as number;
+                if (bestMove !== -1) {
                     const newBoard = [...currentBoard];
-                    newBoard[randomIndex] = 'O';
+                    newBoard[bestMove] = 'O';
                     return newBoard;
                 }
                 return currentBoard;
             });
-        }, 500);
-    }, []);
-
+        }, 1200); // Longer delay to show AI is doing deep thinking
+    }, [getBestMove]);
 
     // --- Effect Hook to check for win/draw and control game flow ---
     useEffect(() => {
@@ -164,7 +343,6 @@ const TicTacToeGame: React.FC = () => {
         const xCount = board.filter(c => c === 'X').length;
         const oCount = board.filter(c => c === 'O').length;
 
-        // Don't do anything on the initial empty board
         if (xCount === 0 && oCount === 0) return;
 
         const lastPlayer = (xCount > oCount) ? 'X' : 'O';
@@ -187,22 +365,19 @@ const TicTacToeGame: React.FC = () => {
         setCurrentPlayer(nextPlayer);
         setStatus(`Player ${nextPlayer}'s turn`);
 
-        // THE FIX: Only unlock the AI when the turn has successfully passed back to the player.
         if (nextPlayer === 'X') {
             setIsAiThinking(false);
         }
-
     }, [board, isGameActive, checkWin]);
 
     // --- Effect Hook for AI's turn ---
     useEffect(() => {
-        // This effect now just decides *when* to trigger the AI move.
         if (gameMode === 'pva' && currentPlayer === 'O' && isGameActive && !isAiThinking) {
-            setIsAiThinking(true); // Lock before making a move
+            setIsAiThinking(true);
+            setStatus("AI is thinking...");
             makeAiMove();
         }
     }, [currentPlayer, gameMode, isGameActive, isAiThinking, makeAiMove]);
-
 
     return (
         <div className="w-full max-w-xl text-center">
@@ -227,7 +402,7 @@ const TicTacToeGame: React.FC = () => {
                             gridTemplateColumns: `repeat(${GRID_SIZE}, 1fr)`,
                             width: 'min(90vw, 450px)',
                             height: 'min(90vw, 450px)',
-                            pointerEvents: isAiThinking ? 'none' : 'auto', // Prevent clicks while AI is thinking
+                            pointerEvents: isAiThinking ? 'none' : 'auto',
                             opacity: isAiThinking ? 0.7 : 1,
                         }}
                     >
