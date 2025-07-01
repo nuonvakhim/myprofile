@@ -86,14 +86,20 @@ const TicTacToeGame: React.FC = () => {
         setStatus("Player X's turn");
     };
 
-    const handleRestartGame = () => {
+    const handleRestartGame = (preserveMode: boolean = false) => {
         setBoard(Array(GRID_SIZE * GRID_SIZE).fill(''));
         setCurrentPlayer('X');
-        setIsGameActive(false);
-        setStatus("Select a game mode");
         setWinningLine(null);
-        setGameMode(null);
         setIsAiThinking(false);
+        if (preserveMode && gameMode) {
+            setIsGameActive(true);
+            setStatus("Player X's turn");
+            // gameMode stays the same
+        } else {
+            setIsGameActive(false);
+            setStatus("Select a game mode");
+            setGameMode(null);
+        }
     };
 
     const handleCellClick = (index: number) => {
@@ -261,7 +267,7 @@ const TicTacToeGame: React.FC = () => {
     };
 
     /**
-     * Enhanced heuristic: counts open lines, blocks, and double threats
+     * Enhanced heuristic: counts open lines, blocks, and double threats, and penalizes imminent human wins
      */
     const enhancedHeuristic = (currentBoard: string[], player: 'X' | 'O'): number => {
         // Use your existing evaluatePosition for base score
@@ -275,6 +281,91 @@ const TicTacToeGame: React.FC = () => {
             if (checkWin(player, testBoard)) doubleThreats++;
         }
         score += doubleThreats >= 2 ? 500 : 0;
+
+        // --- Defensive: Penalize imminent human wins and multiple threats ---
+        // 1. Penalize if human ('X') has three in a row with an open fourth
+        const GRID_CELLS = GRID_SIZE * GRID_SIZE;
+        const WIN_NEAR = WIN_LENGTH - 1;
+        let humanThreats = 0;
+        for (let r = 0; r < GRID_SIZE; r++) {
+            for (let c = 0; c < GRID_SIZE; c++) {
+                // Horizontal
+                if (c + WIN_LENGTH <= GRID_SIZE) {
+                    const line = Array.from({ length: WIN_LENGTH }, (_, i) => r * GRID_SIZE + c + i);
+                    const xCount = line.filter(idx => currentBoard[idx] === 'X').length;
+                    const oCount = line.filter(idx => currentBoard[idx] === 'O').length;
+                    const emptyCount = line.filter(idx => currentBoard[idx] === '').length;
+                    if (xCount === WIN_NEAR && emptyCount === 1 && oCount === 0) humanThreats++;
+                }
+                // Vertical
+                if (r + WIN_LENGTH <= GRID_SIZE) {
+                    const line = Array.from({ length: WIN_LENGTH }, (_, i) => (r + i) * GRID_SIZE + c);
+                    const xCount = line.filter(idx => currentBoard[idx] === 'X').length;
+                    const oCount = line.filter(idx => currentBoard[idx] === 'O').length;
+                    const emptyCount = line.filter(idx => currentBoard[idx] === '').length;
+                    if (xCount === WIN_NEAR && emptyCount === 1 && oCount === 0) humanThreats++;
+                }
+                // Diagonal (top-left to bottom-right)
+                if (r + WIN_LENGTH <= GRID_SIZE && c + WIN_LENGTH <= GRID_SIZE) {
+                    const line = Array.from({ length: WIN_LENGTH }, (_, i) => (r + i) * GRID_SIZE + (c + i));
+                    const xCount = line.filter(idx => currentBoard[idx] === 'X').length;
+                    const oCount = line.filter(idx => currentBoard[idx] === 'O').length;
+                    const emptyCount = line.filter(idx => currentBoard[idx] === '').length;
+                    if (xCount === WIN_NEAR && emptyCount === 1 && oCount === 0) humanThreats++;
+                }
+                // Diagonal (top-right to bottom-left)
+                if (r + WIN_LENGTH <= GRID_SIZE && c - WIN_LENGTH + 1 >= 0) {
+                    const line = Array.from({ length: WIN_LENGTH }, (_, i) => (r + i) * GRID_SIZE + (c - i));
+                    const xCount = line.filter(idx => currentBoard[idx] === 'X').length;
+                    const oCount = line.filter(idx => currentBoard[idx] === 'O').length;
+                    const emptyCount = line.filter(idx => currentBoard[idx] === '').length;
+                    if (xCount === WIN_NEAR && emptyCount === 1 && oCount === 0) humanThreats++;
+                }
+            }
+        }
+        // Heavily penalize imminent human wins
+        score -= humanThreats * 2000;
+
+        // 2. Penalize multiple two-in-a-row threats by human
+        let twoThreats = 0;
+        for (let r = 0; r < GRID_SIZE; r++) {
+            for (let c = 0; c < GRID_SIZE; c++) {
+                // Horizontal
+                if (c + WIN_LENGTH <= GRID_SIZE) {
+                    const line = Array.from({ length: WIN_LENGTH }, (_, i) => r * GRID_SIZE + c + i);
+                    const xCount = line.filter(idx => currentBoard[idx] === 'X').length;
+                    const oCount = line.filter(idx => currentBoard[idx] === 'O').length;
+                    const emptyCount = line.filter(idx => currentBoard[idx] === '').length;
+                    if (xCount === 2 && emptyCount === WIN_LENGTH - 2 && oCount === 0) twoThreats++;
+                }
+                // Vertical
+                if (r + WIN_LENGTH <= GRID_SIZE) {
+                    const line = Array.from({ length: WIN_LENGTH }, (_, i) => (r + i) * GRID_SIZE + c);
+                    const xCount = line.filter(idx => currentBoard[idx] === 'X').length;
+                    const oCount = line.filter(idx => currentBoard[idx] === 'O').length;
+                    const emptyCount = line.filter(idx => currentBoard[idx] === '').length;
+                    if (xCount === 2 && emptyCount === WIN_LENGTH - 2 && oCount === 0) twoThreats++;
+                }
+                // Diagonal (top-left to bottom-right)
+                if (r + WIN_LENGTH <= GRID_SIZE && c + WIN_LENGTH <= GRID_SIZE) {
+                    const line = Array.from({ length: WIN_LENGTH }, (_, i) => (r + i) * GRID_SIZE + (c + i));
+                    const xCount = line.filter(idx => currentBoard[idx] === 'X').length;
+                    const oCount = line.filter(idx => currentBoard[idx] === 'O').length;
+                    const emptyCount = line.filter(idx => currentBoard[idx] === '').length;
+                    if (xCount === 2 && emptyCount === WIN_LENGTH - 2 && oCount === 0) twoThreats++;
+                }
+                // Diagonal (top-right to bottom-left)
+                if (r + WIN_LENGTH <= GRID_SIZE && c - WIN_LENGTH + 1 >= 0) {
+                    const line = Array.from({ length: WIN_LENGTH }, (_, i) => (r + i) * GRID_SIZE + (c - i));
+                    const xCount = line.filter(idx => currentBoard[idx] === 'X').length;
+                    const oCount = line.filter(idx => currentBoard[idx] === 'O').length;
+                    const emptyCount = line.filter(idx => currentBoard[idx] === '').length;
+                    if (xCount === 2 && emptyCount === WIN_LENGTH - 2 && oCount === 0) twoThreats++;
+                }
+            }
+        }
+        score -= twoThreats * 200;
+
         return score;
     };
 
@@ -448,6 +539,16 @@ const TicTacToeGame: React.FC = () => {
         }
     }, [currentPlayer, gameMode, isGameActive, isAiThinking, makeAiMove]);
 
+    // --- Effect Hook to auto-restart after win/draw ---
+    useEffect(() => {
+        if (!isGameActive && (status.includes('Wins') || status.includes('Draw'))) {
+            const timeout = setTimeout(() => {
+                handleRestartGame(true); // preserve game mode
+            }, 3000);
+            return () => clearTimeout(timeout);
+        }
+    }, [isGameActive, status]);
+
     return (
         <div className="w-full max-w-xl text-center">
             <style>{gameStyles}</style>
@@ -492,7 +593,7 @@ const TicTacToeGame: React.FC = () => {
                     </div>
 
                     <div className="mt-6">
-                        <button onClick={handleRestartGame} className="pixel-button">
+                        <button onClick={() => handleRestartGame()} className="pixel-button">
                             Restart
                         </button>
                     </div>
