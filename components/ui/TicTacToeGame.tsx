@@ -135,206 +135,150 @@ const TicTacToeGame: React.FC = () => {
     }, []);
 
     /**
-     * Advanced board evaluation function
+     * Evaluates potential winning/blocking opportunities for a given player
      */
-    const evaluateBoard = useCallback((board: string[], player: 'X' | 'O'): number => {
-        const opponent = player === 'X' ? 'O' : 'X';
+    const evaluatePosition = useCallback((currentBoard: string[], player: 'X' | 'O'): { index: number, score: number }[] => {
+        const availableCells = currentBoard
+            .map((cell, index) => (cell === '' ? index : null))
+            .filter(index => index !== null) as number[];
 
-        // Check for immediate win/loss
-        if (checkWin(player, board)) return 10000;
-        if (checkWin(opponent, board)) return -10000;
+        const evaluations: { index: number, score: number }[] = [];
 
-        let score = 0;
+        for (const cellIndex of availableCells) {
+            let score = 0;
+            const testBoard = [...currentBoard];
+            testBoard[cellIndex] = player;
 
-        // Evaluate all possible lines
-        for (let r = 0; r < GRID_SIZE; r++) {
-            for (let c = 0; c < GRID_SIZE; c++) {
-                // Check all four directions
-                const directions = [[0, 1], [1, 0], [1, 1], [1, -1]];
-
-                for (const [dr, dc] of directions) {
-                    if (r + (WIN_LENGTH - 1) * dr >= 0 && r + (WIN_LENGTH - 1) * dr < GRID_SIZE &&
-                        c + (WIN_LENGTH - 1) * dc >= 0 && c + (WIN_LENGTH - 1) * dc < GRID_SIZE) {
-
-                        const line = Array.from({ length: WIN_LENGTH }, (_, i) =>
-                            (r + i * dr) * GRID_SIZE + (c + i * dc)
-                        );
-
-                        score += evaluateLine(line, board, player);
-                    }
-                }
+            // Check if this move wins the game
+            if (checkWin(player, testBoard)) {
+                score += 1000; // Winning move gets highest priority
             }
+
+            // Check if this move blocks opponent from winning
+            const opponent = player === 'X' ? 'O' : 'X';
+            const opponentTestBoard = [...currentBoard];
+            opponentTestBoard[cellIndex] = opponent;
+            if (checkWin(opponent, opponentTestBoard)) {
+                score += 500; // Blocking opponent win gets high priority
+            }
+
+            // Evaluate potential for creating threats
+            score += evaluateThreats(testBoard, cellIndex, player);
+
+            // Add positional bonus for center and strategic positions
+            score += getPositionalScore(cellIndex);
+
+            evaluations.push({ index: cellIndex, score });
         }
 
-        return score;
+        return evaluations.sort((a, b) => b.score - a.score);
     }, [checkWin]);
 
     /**
-     * Evaluates a single line for potential
+     * Evaluates how many potential winning lines this move creates or extends
      */
-    const evaluateLine = (line: number[], board: string[], player: 'X' | 'O'): number => {
-        const opponent = player === 'X' ? 'O' : 'X';
-        let playerCount = 0;
-        let opponentCount = 0;
-        let emptyCount = 0;
+    const evaluateThreats = (board: string[], cellIndex: number, player: 'X' | 'O'): number => {
+        let threatScore = 0;
+        const row = Math.floor(cellIndex / GRID_SIZE);
+        const col = cellIndex % GRID_SIZE;
 
-        for (const index of line) {
-            if (board[index] === player) playerCount++;
-            else if (board[index] === opponent) opponentCount++;
-            else emptyCount++;
+        // Check all possible lines through this cell
+        const directions = [
+            [0, 1],  // horizontal
+            [1, 0],  // vertical
+            [1, 1],  // diagonal
+            [1, -1]  // anti-diagonal
+        ];
+
+        for (const [dr, dc] of directions) {
+            // Count consecutive pieces in both directions
+            let consecutiveCount = 1; // Count the current move
+            let potentialSpaces = 0;
+
+            // Check forward direction
+            for (let i = 1; i < WIN_LENGTH; i++) {
+                const newRow = row + i * dr;
+                const newCol = col + i * dc;
+                const newIndex = newRow * GRID_SIZE + newCol;
+
+                if (newRow < 0 || newRow >= GRID_SIZE || newCol < 0 || newCol >= GRID_SIZE) break;
+
+                if (board[newIndex] === player) {
+                    consecutiveCount++;
+                } else if (board[newIndex] === '') {
+                    potentialSpaces++;
+                    break;
+                } else {
+                    break; // Opponent piece blocks this direction
+                }
+            }
+
+            // Check backward direction
+            for (let i = 1; i < WIN_LENGTH; i++) {
+                const newRow = row - i * dr;
+                const newCol = col - i * dc;
+                const newIndex = newRow * GRID_SIZE + newCol;
+
+                if (newRow < 0 || newRow >= GRID_SIZE || newCol < 0 || newCol >= GRID_SIZE) break;
+
+                if (board[newIndex] === player) {
+                    consecutiveCount++;
+                } else if (board[newIndex] === '') {
+                    potentialSpaces++;
+                    break;
+                } else {
+                    break; // Opponent piece blocks this direction
+                }
+            }
+
+            // Score based on consecutive pieces and potential
+            if (consecutiveCount >= 2) {
+                threatScore += consecutiveCount * 10;
+            }
+            if (consecutiveCount + potentialSpaces >= WIN_LENGTH) {
+                threatScore += 5; // Bonus for having potential to win in this line
+            }
         }
 
-        // If opponent has pieces in this line, it's not useful for us
-        if (opponentCount > 0 && playerCount > 0) return 0;
-
-        // Score based on potential
-        if (playerCount === 4) return 10000;
-        if (playerCount === 3 && emptyCount === 1) return 500;
-        if (playerCount === 2 && emptyCount === 2) return 50;
-        if (playerCount === 1 && emptyCount === 3) return 5;
-
-        // Penalize opponent potential
-        if (opponentCount === 4) return -10000;
-        if (opponentCount === 3 && emptyCount === 1) return -400;
-        if (opponentCount === 2 && emptyCount === 2) return -40;
-        if (opponentCount === 1 && emptyCount === 3) return -4;
-
-        return 0;
+        return threatScore;
     };
 
     /**
-     * Minimax algorithm with alpha-beta pruning for optimal AI moves
+     * Gives bonus points for strategic positions
      */
-    const minimax = useCallback((
-        board: string[],
-        depth: number,
-        isMaximizing: boolean,
-        alpha: number,
-        beta: number,
-        player: 'X' | 'O'
-    ): { score: number, move?: number } => {
-        const currentPlayer = isMaximizing ? player : (player === 'X' ? 'O' : 'X');
-        const boardScore = evaluateBoard(board, player);
+    const getPositionalScore = (cellIndex: number): number => {
+        const row = Math.floor(cellIndex / GRID_SIZE);
+        const col = cellIndex % GRID_SIZE;
+        const centerRow = Math.floor(GRID_SIZE / 2);
+        const centerCol = Math.floor(GRID_SIZE / 2);
 
-        // Terminal conditions
-        if (Math.abs(boardScore) >= 10000 || depth === 0 || !board.includes('')) {
-            return { score: boardScore - (isMaximizing ? depth : -depth) }; // Prefer quicker wins/slower losses
-        }
-
-        const availableMoves = board
-            .map((cell, index) => cell === '' ? index : null)
-            .filter(index => index !== null) as number[];
-
-        let bestMove = availableMoves[0];
-
-        if (isMaximizing) {
-            let maxScore = -Infinity;
-
-            for (const move of availableMoves) {
-                const newBoard = [...board];
-                newBoard[move] = currentPlayer;
-
-                const { score } = minimax(newBoard, depth - 1, false, alpha, beta, player);
-
-                if (score > maxScore) {
-                    maxScore = score;
-                    bestMove = move;
-                }
-
-                alpha = Math.max(alpha, score);
-                if (beta <= alpha) break; // Alpha-beta pruning
-            }
-
-            return { score: maxScore, move: bestMove };
-        } else {
-            let minScore = Infinity;
-
-            for (const move of availableMoves) {
-                const newBoard = [...board];
-                newBoard[move] = currentPlayer;
-
-                const { score } = minimax(newBoard, depth - 1, true, alpha, beta, player);
-
-                if (score < minScore) {
-                    minScore = score;
-                    bestMove = move;
-                }
-
-                beta = Math.min(beta, score);
-                if (beta <= alpha) break; // Alpha-beta pruning
-            }
-
-            return { score: minScore, move: bestMove };
-        }
-    }, [evaluateBoard]);
+        // Distance from center (closer to center gets higher score)
+        const distanceFromCenter = Math.abs(row - centerRow) + Math.abs(col - centerCol);
+        return Math.max(0, 10 - distanceFromCenter * 2);
+    };
 
     /**
-     * Gets the optimal move using iterative deepening
-     */
-    const getBestMove = useCallback((board: string[]): number => {
-        const availableMoves = board
-            .map((cell, index) => cell === '' ? index : null)
-            .filter(index => index !== null) as number[];
-
-        if (availableMoves.length === 0) return -1;
-
-        // Use iterative deepening to get the best move within time constraints
-        let bestMove = availableMoves[0];
-        let maxDepth = Math.min(8, availableMoves.length); // Adjust depth based on game state
-
-        // For early game, use opening book strategies
-        if (availableMoves.length >= GRID_SIZE * GRID_SIZE - 4) {
-            // Prefer center positions in early game
-            const centerPositions = [];
-            const mid = Math.floor(GRID_SIZE / 2);
-            for (let r = mid - 1; r <= mid + 1; r++) {
-                for (let c = mid - 1; c <= mid + 1; c++) {
-                    if (r >= 0 && r < GRID_SIZE && c >= 0 && c < GRID_SIZE) {
-                        const pos = r * GRID_SIZE + c;
-                        if (availableMoves.includes(pos)) {
-                            centerPositions.push(pos);
-                        }
-                    }
-                }
-            }
-            if (centerPositions.length > 0) {
-                return centerPositions[Math.floor(Math.random() * centerPositions.length)];
-            }
-        }
-
-        // Use minimax for strategic play
-        for (let depth = 1; depth <= maxDepth; depth++) {
-            const result = minimax(board, depth, true, -Infinity, Infinity, 'O');
-            if (result.move !== undefined) {
-                bestMove = result.move;
-            }
-
-            // If we found a winning move, no need to search deeper
-            if (result.score >= 10000) break;
-        }
-
-        return bestMove;
-    }, [minimax]);
-
-
-
-    /**
-     * Ultra-smart AI move selection using minimax
+     * Smart AI move selection
      */
     const makeAiMove = useCallback(() => {
         setTimeout(() => {
             setBoard(currentBoard => {
-                const bestMove = getBestMove(currentBoard);
+                const evaluations = evaluatePosition(currentBoard, 'O');
 
-                if (bestMove !== -1) {
+                if (evaluations.length > 0) {
+                    // Add some randomness to make AI less predictable, but still prefer better moves
+                    const bestScore = evaluations[0].score;
+                    const goodMoves = evaluations.filter(move => move.score >= bestScore * 0.8);
+                    const selectedMove = goodMoves[Math.floor(Math.random() * goodMoves.length)];
+
                     const newBoard = [...currentBoard];
-                    newBoard[bestMove] = 'O';
+                    newBoard[selectedMove.index] = 'O';
                     return newBoard;
                 }
                 return currentBoard;
             });
-        }, 1200); // Longer delay to show AI is doing deep thinking
-    }, [getBestMove]);
+        }, 800); // Slightly longer delay to show AI is "thinking"
+    }, [evaluatePosition]);
 
     // --- Effect Hook to check for win/draw and control game flow ---
     useEffect(() => {
