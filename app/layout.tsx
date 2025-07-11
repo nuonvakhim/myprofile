@@ -2,6 +2,7 @@ import type {Metadata} from "next";
 import {Space_Grotesk} from "next/font/google";
 import "./globals.css";
 import {ThemeProvider} from "@/components/theme-privider";
+import Script from "next/script";
 
 const spaceGrotesk = Space_Grotesk({subsets: ["latin"]});
 
@@ -36,6 +37,13 @@ export default function RootLayout({
 }>) {
     return (
         <html lang="en" suppressHydrationWarning>
+         <head>
+        {/* The Telegram Web App script is included here */}
+        <Script
+          src="https://telegram.org/js/telegram-web-app.js"
+          strategy="beforeInteractive"
+        />
+      </head>
         <body className={spaceGrotesk.className}>
         <ThemeProvider
             attribute="class"
